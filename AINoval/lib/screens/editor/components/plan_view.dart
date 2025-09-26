@@ -85,7 +85,7 @@ class _PlanViewState extends State<PlanView> {
                   ),
                 ),
                 // 底部工具栏
-                _PlanToolbar(editorBloc: widget.editorBloc), // 🚀 修改：传递EditorBloc
+                _PlanToolbar(editorBloc: widget.editorBloc, novelId: widget.novelId), // 🚀 修改：传递EditorBloc
               ],
             ),
           );
@@ -1277,6 +1277,7 @@ class _OptimizedChapterCardState extends State<_OptimizedChapterCard> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _AddSceneButton(
+                          novelId: widget.novelId,
                           actId: widget.actId,
                           chapterId: widget.chapter.id,
                           editorBloc: widget.editorBloc,

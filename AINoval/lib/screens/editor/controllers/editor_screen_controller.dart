@@ -1437,7 +1437,7 @@ class EditorScreenController extends ChangeNotifier {
         }
     });
 
-    editorBloc.add(editor_bloc.AddNewAct(title: title));
+    editorBloc.add(editor_bloc.AddNewAct(novelId: editorBloc.novelId, title: title));
 
     try {
         return await completer.future.timeout(const Duration(seconds: 10), onTimeout: () {
