@@ -281,11 +281,12 @@ class UpdateChapterTitle extends EditorEvent {
 
 // 添加新的Act事件
 class AddNewAct extends EditorEvent {
-  const AddNewAct({this.title = '新Act'});
+  const AddNewAct({required this.novelId, this.title = '新Act'});
+  final String novelId;
   final String title;
 
   @override
-  List<Object?> get props => [title];
+  List<Object?> get props => [novelId, title];
 }
 
 // 添加新的Chapter事件

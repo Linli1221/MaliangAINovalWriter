@@ -621,7 +621,7 @@ class _AddSceneButton extends StatelessWidget {
         ),
         onPressed: () {
           editorBloc.add(editor.AddNewScene(
-            novelId: '',
+            novelId: novelId,
             actId: actId,
             chapterId: chapterId,
             sceneId: 'scene_${DateTime.now().millisecondsSinceEpoch}',
@@ -637,10 +637,12 @@ class _AddChapterCard extends StatelessWidget {
   const _AddChapterCard({
     required this.actId,
     required this.editorBloc,
+    required this.novelId,
   });
 
   final String actId;
   final editor.EditorBloc editorBloc;
+  final String novelId;
 
   @override
   Widget build(BuildContext context) {
@@ -661,7 +663,7 @@ class _AddChapterCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           onTap: () {
             editorBloc.add(editor.AddNewChapter(
-              novelId: '',
+              novelId: novelId,
               actId: actId,
             ));
           },
@@ -1061,6 +1063,7 @@ class _VirtualizedPlanView extends StatelessWidget {
             child: _AddChapterCard(
               actId: item.act!.id,
               editorBloc: editorBloc,
+              novelId: novelId,
             ),
           ),
         );

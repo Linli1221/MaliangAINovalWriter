@@ -1102,16 +1102,16 @@ class EditorMainAreaState extends State<EditorMainArea> {
     AppLogger.i('EditorMainArea', '添加新章节：actId=$actId');
     
     widget.editorBloc.add(editor_bloc.AddNewChapter(
-      novelId: widget.editorBloc.novelId,
+      novelId: widget.novel.id,
       actId: actId,
       title: '新章节',
     ));
   }
-
   void _addNewAct() {
-    widget.editorBloc.add(editor_bloc.AddNewAct(title: '新卷'));
+    widget.editorBloc.add(editor_bloc.AddNewAct(
+        novelId: widget.novel.id,
+        title: '新卷'));
   }
-
   // 提供刷新方法供外部调用
   void refreshUI() {
     if (mounted) {
