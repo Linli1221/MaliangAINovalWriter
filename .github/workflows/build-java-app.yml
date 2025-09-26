@@ -1,0 +1,47 @@
+# GitHub Action: Build Java Spring Boot Application
+
+name: Build AINoval Server JAR
+
+on:
+  push:
+    branches:
+      - main  # 或者你的主分支名，如 master
+    paths:
+      - 'AINovalServer/**' # 仅当后端代码变更时触发
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  build:
+    name: Build JAR with Maven
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin' # Eclipse Temurin, a reliable OpenJDK distribution
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn -B package --file AINovalServer/pom.xml -DskipTests
+        # -B: Batch mode, non-interactive
+        # --file: Specifies the location of the pom.xml
+        # -DskipTests: Skips running tests to speed up the build process
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ainoval-server-jar
+          path: AINovalServer/target/*.jar # Uploads the generated JAR file
+          if-no-files-found: error # Fail the step if no JAR is found
