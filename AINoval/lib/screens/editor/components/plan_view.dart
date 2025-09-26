@@ -598,11 +598,13 @@ class _AddSceneButton extends StatelessWidget {
     required this.actId,
     required this.chapterId,
     required this.editorBloc,
+    required this.novelId,
   });
 
   final String actId;
   final String chapterId;
   final editor.EditorBloc editorBloc;
+  final String novelId;
 
   @override
   Widget build(BuildContext context) {
@@ -692,9 +694,10 @@ class _AddChapterCard extends StatelessWidget {
 
 /// 添加Act按钮
 class _AddActButton extends StatelessWidget {
-  const _AddActButton({required this.editorBloc});
+  const _AddActButton({required this.editorBloc, required this.novelId});
 
   final editor.EditorBloc editorBloc;
+  final String novelId;
 
   @override
   Widget build(BuildContext context) {
@@ -710,7 +713,7 @@ class _AddActButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         ),
         onPressed: () {
-          editorBloc.add(const editor.AddNewAct());
+          editorBloc.add(editor.AddNewAct(novelId: novelId));
         },
       ),
     );
@@ -719,9 +722,10 @@ class _AddActButton extends StatelessWidget {
 
 /// 底部工具栏
 class _PlanToolbar extends StatelessWidget {
-  const _PlanToolbar({required this.editorBloc});
+  const _PlanToolbar({required this.editorBloc, required this.novelId});
 
   final editor.EditorBloc editorBloc;
+  final String novelId;
 
   @override
   Widget build(BuildContext context) {
@@ -741,7 +745,7 @@ class _PlanToolbar extends StatelessWidget {
           _ToolbarButton(
             icon: Icons.add_box_outlined,
             label: '添加Act',
-            onPressed: () => editorBloc.add(const editor.AddNewAct()),
+            onPressed: () => editorBloc.add(editor.AddNewAct(novelId: novelId)),
           ),
           const SizedBox(width: 12),
           _ToolbarButton(
@@ -1071,7 +1075,7 @@ class _VirtualizedPlanView extends StatelessWidget {
       case _PlanItemType.addAct:
         return Padding(
           padding: const EdgeInsets.only(top: 16.0),
-          child: _AddActButton(editorBloc: editorBloc),
+          child: _AddActButton(editorBloc: editorBloc, novelId: novelId),
         );
     }
   }
@@ -1285,6 +1289,7 @@ class _OptimizedChapterCardState extends State<_OptimizedChapterCard> {
                     actId: widget.actId,
                     chapterId: widget.chapter.id,
                     editorBloc: widget.editorBloc,
+                    novelId: widget.novelId,
                   ),
                 ],
               ],
