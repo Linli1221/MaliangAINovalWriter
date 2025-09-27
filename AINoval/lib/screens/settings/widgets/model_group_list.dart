@@ -174,7 +174,7 @@ class _ModelGroupListState extends State<ModelGroupList> {
     );
   }
 
-  Widget _buildModelItem(BuildContext context, ModelInfo modelInfo, bool isSelected, bool isVerified) {
+  Widget _buildModelItem(BuildContext context, ModelInfo modelInfo, bool isSingleSelected, bool isMultiSelected, bool isVerified) {
     final theme = Theme.of(context);
     // final isDark = theme.brightness == Brightness.dark;
 
@@ -182,6 +182,9 @@ class _ModelGroupListState extends State<ModelGroupList> {
     final inputPrice = modelInfo.inputPricePerThousandTokens;
     final outputPrice = modelInfo.outputPricePerThousandTokens;
     final tags = modelInfo.tags;
+    
+    // 确定是否选中（单选模式或多选模式）
+    final isSelected = isSingleSelected || isMultiSelected;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
