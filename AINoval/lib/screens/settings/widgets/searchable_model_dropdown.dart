@@ -36,6 +36,8 @@ class _SearchableModelDropdownState extends State<SearchableModelDropdown> {
   void initState() {
     super.initState();
     _selectedModels = Set<String>.from(widget.selectedModels ?? []);
+    _searchController.addListener(_onSearchChanged);
+    _focusNode.addListener(_onFocusChanged);
   }
   
   @override
@@ -46,13 +48,6 @@ class _SearchableModelDropdownState extends State<SearchableModelDropdown> {
         _selectedModels = Set<String>.from(widget.selectedModels ?? []);
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(_onSearchChanged);
-    _focusNode.addListener(_onFocusChanged);
   }
 
   @override

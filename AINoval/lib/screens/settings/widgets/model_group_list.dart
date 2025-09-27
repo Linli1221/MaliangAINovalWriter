@@ -165,9 +165,10 @@ class _ModelGroupListState extends State<ModelGroupList> {
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
         children: group.modelsInfo.map((modelInfo) {
-          final isSelected = modelInfo.id == selectedModel;
-          final isVerified = verifiedModels.contains(modelInfo.id);
-          return _buildModelItem(context, modelInfo, isSelected, isVerified);
+          final isSingleSelected = modelInfo.id == widget.selectedModel;
+          final isMultiSelected = _selectedModels.contains(modelInfo.id);
+          final isVerified = widget.verifiedModels.contains(modelInfo.id);
+          return _buildModelItem(context, modelInfo, isSingleSelected, isMultiSelected, isVerified);
         }).toList(),
       ),
     );
@@ -200,6 +201,17 @@ class _ModelGroupListState extends State<ModelGroupList> {
         dense: true,
         visualDensity: VisualDensity.compact,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        // 在多选模式下显示复选框
+        leading: widget.onMultipleModelsSelected != null
+          ? Checkbox(
+              value: isMultiSelected,
+              onChanged: (bool? value) {
+                _toggleModelSelection(modelInfo.id);
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            )
+          : null,
         title: Row(
           children: [
             // 模型状态图标
@@ -359,10 +371,12 @@ class _ModelGroupListState extends State<ModelGroupList> {
             ),
           ],
         ),
-        onTap: () {
-          AppLogger.i('ModelGroupList', '用户点击了模型项: ${modelInfo.id}');
-          onModelSelected(modelInfo.id);
-        },
+        onTap: widget.onMultipleModelsSelected != null
+          ? () => _toggleModelSelection(modelInfo.id)
+          : () {
+              print('ModelGroupList: 用户点击了模型项: ${modelInfo.id}');
+              widget.onModelSelected(modelInfo.id);
+            },
         selected: isSelected,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(6),
