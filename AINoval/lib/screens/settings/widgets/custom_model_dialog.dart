@@ -128,12 +128,20 @@ class _CustomModelDialogState extends State<CustomModelDialog> {
         FilledButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
-              widget.onConfirm(
-                _modelNameController.text.trim(),
-                _modelAliasController.text.trim(),
-                _apiEndpointController.text.trim().isEmpty ? null : _apiEndpointController.text.trim(),
-              );
+              print('CustomModelDialog: 表单验证通过，准备调用onConfirm回调');
+              try {
+                widget.onConfirm(
+                  _modelNameController.text.trim(),
+                  _modelAliasController.text.trim(),
+                  _apiEndpointController.text.trim().isEmpty ? null : _apiEndpointController.text.trim(),
+                );
+                print('CustomModelDialog: onConfirm回调执行成功');
+              } catch (e) {
+                print('CustomModelDialog: onConfirm回调执行出错: $e');
+              }
               Navigator.of(context).pop();
+            } else {
+              print('CustomModelDialog: 表单验证失败');
             }
           },
           child: const Text('确认添加'),

@@ -242,6 +242,7 @@ class AiConfigBloc extends Bloc<AiConfigEvent, AiConfigState> {
         actionErrorMessage: () => null));
     try {
       AppLogger.i('AiConfigBloc', '开始添加配置: provider=${event.provider}, modelName=${event.modelName}');
+      print('AiConfigBloc: 开始添加配置: provider=${event.provider}, modelName=${event.modelName}');
       
       final newConfig = await _repository.addConfiguration(
         userId: event.userId,
@@ -253,6 +254,7 @@ class AiConfigBloc extends Bloc<AiConfigEvent, AiConfigState> {
       );
       
       AppLogger.i('AiConfigBloc', '配置添加成功: configId=${newConfig.id}');
+      print('AiConfigBloc: 配置添加成功: configId=${newConfig.id}');
       
       // 直接更新列表，避免重复请求
       final currentConfigs = List<UserAIModelConfigModel>.from(state.configs);
@@ -264,18 +266,23 @@ class AiConfigBloc extends Bloc<AiConfigEvent, AiConfigState> {
       // 使缓存失效，确保下次加载最新数据
       _lastConfigsLoadTime = null;
       
+      print('AiConfigBloc: 准备发射成功状态');
       emit(state.copyWith(
         actionStatus: AiConfigActionStatus.success,
         configs: currentConfigs,
         providerDefaultConfigs: providerDefaultConfigs,
       ));
+      print('AiConfigBloc: 成功状态已发射');
       
       AppLogger.i('AiConfigBloc', '配置列表已更新，避免重复请求');
+      print('AiConfigBloc: 配置列表已更新，避免重复请求');
     } catch (e, stackTrace) {
       AppLogger.e('AiConfigBloc', '添加配置失败', e, stackTrace);
+      print('AiConfigBloc: 添加配置失败: $e');
       emit(state.copyWith(
           actionStatus: AiConfigActionStatus.error,
           actionErrorMessage: () => '添加失败: ${e.toString()}'));
+      print('AiConfigBloc: 错误状态已发射');
     }
   }
 
@@ -707,8 +714,10 @@ class AiConfigBloc extends Bloc<AiConfigEvent, AiConfigState> {
         actionErrorMessage: () => null));
     try {
       AppLogger.i('AiConfigBloc', '开始添加自定义模型并验证: provider=${event.provider}, modelName=${event.modelName}');
+      print('AiConfigBloc: 开始添加自定义模型并验证: provider=${event.provider}, modelName=${event.modelName}');
       
       // 首先添加配置
+      print('AiConfigBloc: 准备调用_repository.addConfiguration');
       final newConfig = await _repository.addConfiguration(
         userId: event.userId,
         provider: event.provider,
@@ -717,17 +726,22 @@ class AiConfigBloc extends Bloc<AiConfigEvent, AiConfigState> {
         apiKey: event.apiKey,
         apiEndpoint: event.apiEndpoint,
       );
+      print('AiConfigBloc: _repository.addConfiguration调用完成，configId=${newConfig.id}');
       
       AppLogger.i('AiConfigBloc', '自定义模型添加成功: configId=${newConfig.id}');
+      print('AiConfigBloc: 自定义模型添加成功: configId=${newConfig.id}');
       
       // 立即验证配置
       try {
+        print('AiConfigBloc: 准备调用_repository.validateConfiguration');
         final validatedConfig = await _repository.validateConfiguration(
-          userId: event.userId, 
+          userId: event.userId,
           configId: newConfig.id,
         );
+        print('AiConfigBloc: _repository.validateConfiguration调用完成，isValidated=${validatedConfig.isValidated}');
         
         AppLogger.i('AiConfigBloc', '自定义模型验证完成: configId=${newConfig.id}, isValidated=${validatedConfig.isValidated}');
+        print('AiConfigBloc: 自定义模型验证完成: configId=${newConfig.id}, isValidated=${validatedConfig.isValidated}');
         
         // 直接更新列表，避免重复请求
         final currentConfigs = List<UserAIModelConfigModel>.from(state.configs);
@@ -739,16 +753,20 @@ class AiConfigBloc extends Bloc<AiConfigEvent, AiConfigState> {
         // 使缓存失效，确保下次加载最新数据
         _lastConfigsLoadTime = null;
         
+        print('AiConfigBloc: 准备发射成功状态');
         emit(state.copyWith(
           actionStatus: AiConfigActionStatus.success,
           configs: currentConfigs,
           providerDefaultConfigs: providerDefaultConfigs,
         ));
+        print('AiConfigBloc: 成功状态已发射');
         
         AppLogger.i('AiConfigBloc', '自定义模型添加和验证完成，列表已更新');
+        print('AiConfigBloc: 自定义模型添加和验证完成，列表已更新');
         
       } catch (validateError) {
         AppLogger.w('AiConfigBloc', '自定义模型验证失败，但配置已添加: ${validateError.toString()}');
+        print('AiConfigBloc: 自定义模型验证失败，但配置已添加: ${validateError.toString()}');
         
         // 验证失败，但配置已添加，仍然更新列表
         final currentConfigs = List<UserAIModelConfigModel>.from(state.configs);
@@ -757,18 +775,22 @@ class AiConfigBloc extends Bloc<AiConfigEvent, AiConfigState> {
         final providerDefaultConfigs = _buildProviderDefaultConfigs(currentConfigs);
         _lastConfigsLoadTime = null;
         
+        print('AiConfigBloc: 验证失败但仍准备发射成功状态');
         emit(state.copyWith(
           actionStatus: AiConfigActionStatus.success,
           configs: currentConfigs,
           providerDefaultConfigs: providerDefaultConfigs,
         ));
+        print('AiConfigBloc: 验证失败的成功状态已发射');
       }
       
     } catch (e, stackTrace) {
       AppLogger.e('AiConfigBloc', '添加自定义模型失败', e, stackTrace);
+      print('AiConfigBloc: 添加自定义模型失败: $e');
       emit(state.copyWith(
           actionStatus: AiConfigActionStatus.error,
           actionErrorMessage: () => '添加自定义模型失败: ${e.toString()}'));
+      print('AiConfigBloc: 错误状态已发射');
     }
   }
 

@@ -4,25 +4,87 @@ import 'package:flutter/material.dart';
 
 /// 模型分组列表组件
 /// 在提供商内显示按前缀分组的模型列表
-class ModelGroupList extends StatelessWidget {
+class ModelGroupList extends StatefulWidget {
   const ModelGroupList({
     super.key,
     required this.modelGroup,
     required this.onModelSelected,
     this.selectedModel,
     this.verifiedModels = const [],
+    this.onMultipleModelsSelected,
+    this.selectedModels,
   });
 
   final AIModelGroup modelGroup;
   final ValueChanged<String> onModelSelected;
   final String? selectedModel;
   final List<String> verifiedModels;
+  final ValueChanged<List<String>>? onMultipleModelsSelected;
+  final List<String>? selectedModels;
+
+  @override
+  State<ModelGroupList> createState() => _ModelGroupListState();
+}
+
+class _ModelGroupListState extends State<ModelGroupList> {
+  late List<String> _selectedModels;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedModels = List<String>.from(widget.selectedModels ?? []);
+  }
+
+  @override
+  void didUpdateWidget(covariant ModelGroupList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedModels != oldWidget.selectedModels) {
+      setState(() {
+        _selectedModels = List<String>.from(widget.selectedModels ?? []);
+      });
+    }
+  }
+
+  void _toggleModelSelection(String modelId) {
+    setState(() {
+      if (_selectedModels.contains(modelId)) {
+        _selectedModels.remove(modelId);
+      } else {
+        _selectedModels.add(modelId);
+      }
+    });
+    
+    // 通知父组件选择了多个模型
+    widget.onMultipleModelsSelected?.call(_selectedModels);
+  }
+
+  void _selectAllModels() {
+    setState(() {
+      _selectedModels.clear();
+      for (final group in widget.modelGroup.groups) {
+        for (final model in group.modelsInfo) {
+          _selectedModels.add(model.id);
+        }
+      }
+    });
+    
+    // 通知父组件选择了多个模型
+    widget.onMultipleModelsSelected?.call(_selectedModels);
+  }
+
+  void _clearAllSelections() {
+    setState(() {
+      _selectedModels.clear();
+    });
+    
+    // 通知父组件选择了多个模型
+    widget.onMultipleModelsSelected?.call(_selectedModels);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // final isDark = theme.brightness == Brightness.dark;
-
+    
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -32,20 +94,48 @@ class ModelGroupList extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: modelGroup.groups.length,
-        separatorBuilder: (context, index) => Divider(
-          height: 1,
-          color: theme.colorScheme.outline.withOpacity(0.1),
-          indent: 16,
-          endIndent: 16,
-        ),
-        itemBuilder: (context, index) {
-          final group = modelGroup.groups[index];
-          return _buildModelPrefixGroup(context, group);
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 添加全选/取消全选按钮
+          if (widget.onMultipleModelsSelected != null) ...[
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _clearAllSelections,
+                    child: const Text('取消全选'),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: _selectAllModels,
+                    child: const Text('全选'),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+          ],
+          Expanded(
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.modelGroup.groups.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: theme.colorScheme.outline.withOpacity(0.1),
+                indent: 16,
+                endIndent: 16,
+              ),
+              itemBuilder: (context, index) {
+                final group = widget.modelGroup.groups[index];
+                return _buildModelPrefixGroup(context, group);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -269,7 +359,10 @@ class ModelGroupList extends StatelessWidget {
             ),
           ],
         ),
-        onTap: () => onModelSelected(modelInfo.id),
+        onTap: () {
+          AppLogger.i('ModelGroupList', '用户点击了模型项: ${modelInfo.id}');
+          onModelSelected(modelInfo.id);
+        },
         selected: isSelected,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(6),

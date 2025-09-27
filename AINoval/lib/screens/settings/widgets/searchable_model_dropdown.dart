@@ -8,11 +8,15 @@ class SearchableModelDropdown extends StatefulWidget {
     required this.models,
     required this.onModelSelected,
     this.hintText = '搜索模型',
+    this.onMultipleModelsSelected,
+    this.selectedModels,
   });
 
   final List<String> models;
   final ValueChanged<String> onModelSelected;
   final String hintText;
+  final ValueChanged<List<String>>? onMultipleModelsSelected;
+  final List<String>? selectedModels;
 
   @override
   State<SearchableModelDropdown> createState() => _SearchableModelDropdownState();
@@ -26,6 +30,23 @@ class _SearchableModelDropdownState extends State<SearchableModelDropdown> {
   OverlayEntry? _overlayEntry;
   String _searchText = '';
   bool _isDropdownOpen = false;
+  late Set<String> _selectedModels;
+  
+  @override
+  void initState() {
+    super.initState();
+    _selectedModels = Set<String>.from(widget.selectedModels ?? []);
+  }
+  
+  @override
+  void didUpdateWidget(covariant SearchableModelDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedModels != oldWidget.selectedModels) {
+      setState(() {
+        _selectedModels = Set<String>.from(widget.selectedModels ?? []);
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -147,23 +168,51 @@ class _SearchableModelDropdownState extends State<SearchableModelDropdown> {
       itemCount: filteredModels.length,
       itemBuilder: (context, index) {
         final model = filteredModels[index];
+        final isSelected = _selectedModels.contains(model);
+        
         return ListTile(
           dense: true,
           visualDensity: VisualDensity.compact,
+          // 在多选模式下显示复选框
+          leading: widget.onMultipleModelsSelected != null
+            ? Checkbox(
+                value: isSelected,
+                onChanged: (bool? value) {
+                  _toggleModelSelection(model);
+                },
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              )
+            : null,
           title: Text(
             model,
             style: const TextStyle(fontSize: 13),
             overflow: TextOverflow.ellipsis,
           ),
-          onTap: () {
-            widget.onModelSelected(model);
-            _searchController.clear();
-            _removeOverlay();
-            _focusNode.unfocus();
-          },
+          onTap: widget.onMultipleModelsSelected != null
+            ? () => _toggleModelSelection(model)
+            : () {
+                widget.onModelSelected(model);
+                _searchController.clear();
+                _removeOverlay();
+                _focusNode.unfocus();
+              },
         );
       },
     );
+  }
+  
+  void _toggleModelSelection(String model) {
+    setState(() {
+      if (_selectedModels.contains(model)) {
+        _selectedModels.remove(model);
+      } else {
+        _selectedModels.add(model);
+      }
+    });
+    
+    // 通知父组件选择了多个模型
+    widget.onMultipleModelsSelected?.call(_selectedModels.toList());
   }
 
   @override

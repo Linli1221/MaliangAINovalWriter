@@ -43,6 +43,7 @@ class _AiConfigFormState extends State<AiConfigForm> {
 
   String? _selectedProvider;
   String? _selectedModel;
+  List<String> _selectedModels = []; // 多选模型列表
   ModelListingCapability? _providerCapability; // New: Store capability
   bool _isLoadingProviders = false;
   bool _isLoadingModels = false;
@@ -50,6 +51,7 @@ class _AiConfigFormState extends State<AiConfigForm> {
   bool _apiKeyTestSuccess = false; // New: Track API key test success for current provider
   bool _isSaving = false; // Track internal saving state
   bool _showApiKey = false; // 控制API Key是否显示
+  bool _isMultiSelectMode = false; // 是否为多选模式
 
   List<String> _providers = [];
   List<String> _models = [];
@@ -87,6 +89,7 @@ class _AiConfigFormState extends State<AiConfigForm> {
     } else {
       _selectedProvider = null;
       _selectedModel = null;
+      _selectedModels.clear();
       _providers = [];
       _models = [];
        _apiEndpointController.text = '';
@@ -173,7 +176,13 @@ class _AiConfigFormState extends State<AiConfigForm> {
     }
 
     // 在添加模式下校验模型选择
-    if (!_isEditMode && _selectedModel == null) {
+    if (!_isEditMode && _isMultiSelectMode && _selectedModels.isEmpty) {
+      setState(() {
+        _modelError = true;
+        _modelErrorText = '请至少选择一个模型';
+      });
+      hasError = true;
+    } else if (!_isEditMode && !_isMultiSelectMode && _selectedModel == null) {
       setState(() {
         _modelError = true;
         _modelErrorText = '请选择一个模型';
@@ -239,16 +248,32 @@ class _AiConfigFormState extends State<AiConfigForm> {
               _apiEndpointController.text.trim(), // Send empty string to clear
         ));
       } else {
-        bloc.add(AddAiConfig(
-          userId: widget.userId,
-          provider: _selectedProvider!,
-          modelName: _selectedModel!,
-          apiKey: apiKey ?? "", // Backend likely expects non-null, pass empty string
-          alias: _aliasController.text.trim().isEmpty
-              ? _selectedModel // Default alias to model name if empty
-              : _aliasController.text.trim(),
-          apiEndpoint: _apiEndpointController.text.trim(),
-        ));
+        if (_isMultiSelectMode) {
+          // 批量添加模型
+          for (final model in _selectedModels) {
+            bloc.add(AddAiConfig(
+              userId: widget.userId,
+              provider: _selectedProvider!,
+              modelName: model,
+              apiKey: apiKey ?? "", // Backend likely expects non-null, pass empty string
+              alias: _aliasController.text.trim().isEmpty
+                  ? model // Default alias to model name if empty
+                  : _aliasController.text.trim(),
+              apiEndpoint: _apiEndpointController.text.trim(),
+            ));
+          }
+        } else {
+          bloc.add(AddAiConfig(
+            userId: widget.userId,
+            provider: _selectedProvider!,
+            modelName: _selectedModel!,
+            apiKey: apiKey ?? "", // Backend likely expects non-null, pass empty string
+            alias: _aliasController.text.trim().isEmpty
+                ? _selectedModel // Default alias to model name if empty
+                : _aliasController.text.trim(),
+            apiEndpoint: _apiEndpointController.text.trim(),
+          ));
+        }
       }
       // The BlocListener in SettingsPanel will handle hiding the form on success/error
     }
@@ -256,6 +281,8 @@ class _AiConfigFormState extends State<AiConfigForm> {
 
   // 处理模型选择
   void _handleModelSelected(String model) {
+    AppLogger.i('AiConfigForm', '用户选择了模型: $model');
+    print('AiConfigForm: 用户选择了模型: $model');
     setState(() {
       _selectedModel = model;
       // 清除模型选择错误状态
@@ -265,6 +292,18 @@ class _AiConfigFormState extends State<AiConfigForm> {
       if (_aliasController.text.isEmpty) {
         _aliasController.text = model;
       }
+    });
+  }
+  
+  // 处理多选模型选择
+  void _handleMultipleModelsSelected(List<String> models) {
+    AppLogger.i('AiConfigForm', '用户选择了多个模型: ${models.length}个');
+    print('AiConfigForm: 用户选择了多个模型: ${models.length}个');
+    setState(() {
+      _selectedModels = List<String>.from(models);
+      // 清除模型选择错误状态
+      _modelError = false;
+      _modelErrorText = null;
     });
   }
 
@@ -287,32 +326,40 @@ class _AiConfigFormState extends State<AiConfigForm> {
           // 立即保存配置到后端
           try {
             AppLogger.i('AiConfigForm', '开始添加自定义模型: $_selectedProvider/$modelName');
+            print('AiConfigForm: 开始添加自定义模型: $_selectedProvider/$modelName');
             
             // 显示加载状态
             setState(() {
               _isSaving = true;
             });
+            print('AiConfigForm: 设置_isSaving为true');
             
             // 触发添加自定义模型并验证事件
+            print('AiConfigForm: 准备触发AddCustomModelAndValidate事件');
             context.read<AiConfigBloc>().add(AddCustomModelAndValidate(
-              userId: widget.userId, 
+              userId: widget.userId,
               provider: _selectedProvider!,
               modelName: modelName,
               apiKey: apiKey,
               alias: modelAlias,
               apiEndpoint: apiEndpoint?.isEmpty == true ? null : apiEndpoint,
             ));
+            print('AiConfigForm: AddCustomModelAndValidate事件已触发');
             
             // 显示成功提示
             TopToast.info(context, '自定义模型 $modelName 已添加，正在验证连接...');
+            print('AiConfigForm: 显示成功提示');
             
           } catch (e) {
             AppLogger.e('AiConfigForm', '添加自定义模型失败', e);
+            print('AiConfigForm: 添加自定义模型失败: $e');
             setState(() {
               _isSaving = false;
             });
+            print('AiConfigForm: 设置_isSaving为false');
             
             TopToast.error(context, '添加自定义模型失败: ${e.toString()}');
+            print('AiConfigForm: 显示错误提示');
           }
         },
       ),
@@ -668,10 +715,34 @@ class _AiConfigFormState extends State<AiConfigForm> {
                                           width: 1.5,
                                         ),
                                       ) : null,
-                                      child: SearchableModelDropdown(
-                                        models: _models,
-                                        onModelSelected: _handleModelSelected,
-                                        hintText: '搜索可用模型',
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: SearchableModelDropdown(
+                                              models: _models,
+                                              onModelSelected: _handleModelSelected,
+                                              onMultipleModelsSelected: _isMultiSelectMode ? _handleMultipleModelsSelected : null,
+                                              selectedModels: _isMultiSelectMode ? _selectedModels : null,
+                                              hintText: '搜索可用模型',
+                                            ),
+                                          ),
+                                          // 添加多选切换按钮
+                                          IconButton(
+                                            icon: Icon(
+                                              _isMultiSelectMode ? Icons.check_box : Icons.check_box_outline_blank,
+                                              size: 20,
+                                            ),
+                                            onPressed: () {
+                                              setState(() {
+                                                _isMultiSelectMode = !_isMultiSelectMode;
+                                                if (!_isMultiSelectMode) {
+                                                  _selectedModels.clear();
+                                                }
+                                              });
+                                            },
+                                            tooltip: _isMultiSelectMode ? '切换到单选模式' : '切换到多选模式',
+                                          ),
+                                        ],
                                       ),
                                     ),
                                     // 模型选择错误提示
